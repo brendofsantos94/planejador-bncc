@@ -14,13 +14,14 @@ seleção de habilidades, geração assistida por IA e rascunhos privados."
 - Q: Como o sistema deve agir se o mesmo professor editar o mesmo rascunho em dois dispositivos e ambos tentarem salvar? → A: Impedir o salvamento desatualizado e pedir recarregamento.
 - Q: Quanto tempo a aplicação deve esperar pela geração antes de informar que ela falhou? → A: 60 segundos.
 - Q: Quais seções mínimas um plano gerado precisa conter para ser considerado válido? → A: Título, objetivos, atividades e avaliação.
-- Q: Quais dados podem ser enviados ao serviço de IA para gerar o plano? → A: Habilidades, instrução, duração e uso de recursos digitais.
+- Q: Quais dados podem ser enviados ao serviço de IA para gerar o plano? → A: O workflow n8n recebe o e-mail do professor em `sessao`; `habilidade` é uma string com uma habilidade por linha no formato `CÓDIGO — descrição`.
+- Q: Qual regra provisória será usada enquanto a URL real do webhook não estiver definida? → A: Cliente HTTP POST para uma URL configurada por ambiente em `N8N_WEBHOOK_URL`.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Gerar rascunho a partir de habilidades BNCC (Priority: P1)
 
-Como professor autenticado, quero localizar e selecionar habilidades BNCC, informar o contexto
+Como professor autenticado, quero localizar e selecionar uma ou mais habilidades BNCC, informar o contexto
 pedagógico e solicitar um plano para receber um rascunho editável que apoie meu planejamento.
 
 **Why this priority**: Esta é a entrega central do produto: transformar uma seleção curricular e
@@ -121,17 +122,18 @@ um rascunho da outra e é impedida. Cada uma consegue encerrar sua própria sess
 - **FR-006**: O sistema MUST permitir pesquisar e combinar filtros por nível, ano quando aplicável,
   eixo, código e texto da habilidade.
 - **FR-007**: O sistema MUST permitir selecionar uma ou mais habilidades dentre os resultados da
-  pesquisa.
-- **FR-008**: O sistema MUST exigir ao menos uma habilidade, uma instrução pedagógica não vazia,
+  pesquisa por solicitação de geração.
+- **FR-008**: O sistema MUST exigir ao menos uma habilidade selecionada, uma instrução pedagógica não vazia,
   duração em minutos maior que zero e a indicação de uso de recursos digitais antes da solicitação.
 - **FR-009**: O sistema MUST exibir um estado de preparação após a confirmação e antes de apresentar
   o resultado de geração.
 - **FR-010**: O sistema MUST enviar a solicitação do professor ao serviço de IA e MUST aceitar o
   resultado somente quando contiver, em Markdown, título, objetivos, atividades e avaliação. O
   sistema MUST tratar como falha a ausência de resposta válida após 60 segundos.
-- **FR-011**: O sistema MUST enviar ao serviço de IA somente as habilidades selecionadas, a
-  instrução pedagógica, a duração e a indicação de recursos digitais. O sistema MUST NOT enviar a
-  identidade do professor, dados de sessão ou conteúdo de outros rascunhos.
+- **FR-011**: O sistema MUST enviar ao workflow n8n os campos confirmados no contrato: `sessao`
+  com o e-mail do professor, `habilidade` como string com cada habilidade selecionada em uma linha
+  no formato `CÓDIGO — descrição`, `instrucao`, `duracao` e `recursos_digitais`. O sistema MUST NOT
+  enviar dados de sessão ou conteúdo de outros rascunhos.
 - **FR-012**: Para uma resposta válida, o sistema MUST salvar um plano pertencente somente ao
   professor solicitante, com estado RASCUNHO e indicação de auxílio por IA.
 - **FR-013**: Para falha ou resposta inválida, o sistema MUST preservar os campos da solicitação,
@@ -188,6 +190,8 @@ um rascunho da outra e é impedida. Cada uma consegue encerrar sua própria sess
   público e sem recuperação de senha neste escopo.
 - O catálogo mínimo contém ao menos oito habilidades representativas e não pretende cobrir toda a
   base BNCC nesta primeira entrega.
+- A interface permite múltiplas habilidades; o campo singular `habilidade` do workflow n8n recebe
+  uma string com uma habilidade por linha, no formato `CÓDIGO — descrição`.
 - A duração é um número inteiro de minutos maior que zero.
 - Uma resposta de IA válida contém, em Markdown, título, objetivos, atividades e avaliação; a
   qualidade pedagógica do texto será avaliada pelo professor antes de qualquer uso.
