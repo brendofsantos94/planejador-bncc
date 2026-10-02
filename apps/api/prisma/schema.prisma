@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AiRunStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum AiProvider {
+  n8n
+  mock
+}
+
+enum PlanStatus {
+  RASCUNHO
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique @db.VarChar(254)
+  passwordHash String    @db.VarChar(255)
+  displayName  String    @db.VarChar(120)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+  sessions     Session[]
+  plans        Plan[]
+  aiRuns       AiRun[]
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  refreshTokenHash String    @unique @db.VarChar(64)
+  lastSeenAt       DateTime  @db.Timestamptz(3)
+  expiresAt        DateTime  @db.Timestamptz(3)
+  revokedAt        DateTime? @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model BnccSkill {
+  id          String      @id @default(uuid()) @db.Uuid
+  nivel       String      @db.VarChar(120)
+  ano         Int?
+  eixo        String      @db.VarChar(160)
+  codigo      String      @unique @db.VarChar(24)
+  descricao   String      @db.Text
+  explicacao  String      @db.Text
+  exemplos    String      @db.Text
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime    @updatedAt @db.Timestamptz(3)
+  plans       PlanSkill[]
+
+  @@index([nivel, ano, eixo])
+  @@index([eixo])
+}
+
+model AiRun {
+  id            String       @id @default(uuid()) @db.Uuid
+  userId        String       @db.Uuid
+  requestId     String       @unique @db.Uuid
+  inputSnapshot Json
+  status        AiRunStatus  @default(PENDING)
+  provider      AiProvider
+  errorCode     String?      @db.VarChar(80)
+  startedAt     DateTime     @default(now()) @db.Timestamptz(3)
+  finishedAt    DateTime?    @db.Timestamptz(3)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          Plan?
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model Plan {
+  id         String      @id @default(uuid()) @db.Uuid
+  ownerId    String      @db.Uuid
+  aiRunId    String      @unique @db.Uuid
+  title      String      @db.VarChar(240)
+  markdown   String      @db.Text
+  status     PlanStatus  @default(RASCUNHO)
+  aiAssisted Boolean     @default(true)
+  version    Int         @default(1)
+  createdAt  DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime    @updatedAt @db.Timestamptz(3)
+  lastSavedAt DateTime   @default(now()) @db.Timestamptz(3)
+  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  aiRun      AiRun       @relation(fields: [aiRunId], references: [id], onDelete: Restrict)
+  skills     PlanSkill[]
+
+  @@index([ownerId, updatedAt])
+  @@index([ownerId, status])
+}
+
+model PlanSkill {
+  planId  String    @db.Uuid
+  skillId String    @db.Uuid
+  plan    Plan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  skill   BnccSkill @relation(fields: [skillId], references: [id], onDelete: Restrict)
+
+  @@id([planId, skillId])
+  @@index([skillId])
+}
