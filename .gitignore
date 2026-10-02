@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+.pnpm-store/
+package-lock.json
 
 # Build output and caches
 dist/
@@ -8,6 +10,7 @@ build/
 out/
 .cache/
 coverage/
+apps/api/src/generated/
 
 # Environment files (commit examples only)
 .env
@@ -27,6 +30,9 @@ pnpm-debug.log*
 .idea/
 *.swp
 *.swo
+*.tmp
+*.temp
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
 Desktop.ini

@@ -3,18 +3,31 @@
 ## Pré-requisitos
 
 - Node.js 22.23.x LTS, pnpm 12.x e Docker Desktop.
-- Copiar `.env.example` para os arquivos locais e preencher somente valores de
-  desenvolvimento; nunca commitar `.env`.
-- Usar `N8N_MODE=mock` nos testes. Para integração, definir `N8N_MODE=http`,
-  `N8N_WEBHOOK_URL` e `N8N_API_KEY` apenas na API.
+- Copiar `.env.example` para `.env` na raiz, `apps/api/.env.example` para
+  `apps/api/.env` e `apps/web/.env.example` para `apps/web/.env.local`. O Compose
+  usa o `.env` da raiz para interpolar as variáveis do PostgreSQL; a API carrega
+  explicitamente `apps/api/.env`; o Next.js carrega `apps/web/.env.local`.
+- Manter no `.env` da raiz somente `POSTGRES_DB`, `POSTGRES_USER`,
+  `POSTGRES_PASSWORD` e `POSTGRES_PORT`. `DATABASE_URL` e configurações/credenciais
+  de auth e n8n pertencem a `apps/api/.env`; URLs `NEXT_PUBLIC_*` pertencem ao web.
+- Nenhuma chave deve receber prefixo `NEXT_PUBLIC_`. Configure `N8N_API_KEY`
+  localmente pelo VS Code em `apps/api/.env`, sem salvá-la no repositório.
+- `DATABASE_URL` deve usar o mesmo usuário, senha, banco e porta definidos no
+  `.env` da raiz. Deixe `N8N_MODE=mock` durante esta fase.
+- Usar `N8N_MODE=mock` durante a Fase A e nos testes. A chave deve ser configurada
+  somente pela API, em `apps/api/.env`, no VS Code; a integração real só será
+  habilitada na Fase B. `N8N_TIMEOUT_MS=90000` é referência ajustável, não garantia
+  de duração: o timeout encerra a espera da API, mas pode não cancelar o workflow n8n.
 
 ## Base e seed
 
 ```text
 pnpm install
 docker compose up -d postgres
-pnpm --filter api prisma:migrate
-pnpm --filter api prisma:seed
+docker compose ps
+pnpm --filter @planejador/api prisma:generate
+pnpm --filter @planejador/api prisma:migrate
+pnpm --filter @planejador/api prisma:seed
 ```
 
 O seed idempotente cria duas contas locais e carrega `docs/data/bncc-recorte.json`.
@@ -27,7 +40,7 @@ antes do aceite final, sem inventar registros.
 pnpm dev
 ```
 
-Web: `http://localhost:3000`; API: `http://localhost:3001`.
+Web: `http://localhost:3000`; API base: `http://localhost:3001/api/v1`.
 
 ## Qualidade
 
